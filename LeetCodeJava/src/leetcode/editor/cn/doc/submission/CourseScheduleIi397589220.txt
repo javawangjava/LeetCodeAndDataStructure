@@ -1,0 +1,130 @@
+    class Solution {
+
+        // 将课程看成图中的节点，如果两门课程存在先修顺序那么它们在图中对应的节点之间存在一条从先修课程到后修课程的边，因此这是一个有向图。
+        // 可行的修课序列实际上是图的拓扑排序序列。
+        // 图中的每条边都是从先修课程指向后修课程，而拓扑排序能够保证任意一条边的起始节点一定排在终止节点的前面，
+        // 因此拓扑排序得到的序列与先修顺序一定不会存在冲突，于是这个问题转变成如何求有向图的拓扑排序序列。
+        // 对有向图进行拓扑排序的算法是每次找出一个入度为0的节点添加到序列中，然后删除该节点及所有以该节点为起点的边。
+        // 重复这个过程，直到图为空或图中不存在入度为0的节点。
+
+
+        // 代码先根据先修顺序构建出有向图graph，graph用一个HashMap表示邻接表，它的键是先修课程，它的值是必须在键对应的课程之后学习的所有课程。
+        // 同时，将每个节点的入度保存到数组inDegrees中，“inDegrees[i]”表示节点i的入度。
+        // 接下来用广度优先搜索算法实现拓扑排序。队列中保存的是入度为0的节点。
+        // 每次从队列中取出一个节点，将该节点添加到拓扑排序序列中，然后找到该课程的后修课程并将它们的节点的入度减1，这相当于删除从先修课程到后修课程的边。
+        // 如果发现新的入度为0的节点，则将其添加到队列中。重复这个过程直到队列为空，此时要么图中所有节点都已经访问完毕，已经得到了完整的拓扑排序序列；
+        // 要么剩下的还没有搜索到的节点形成一个环，已经不存在入度为0的节点。
+
+
+        //// 注意在原参数数组中prerequisites第二个元素才是先修课程，第一个元素是后修课程
+        //public int[] findOrder(int numCourses, int[][] prerequisites) {
+        //    if (prerequisites == null) {
+        //        return new int[0];
+        //    }
+        //    // 根据先修顺序构建出有向图graph，graph用一个HashMap表示邻接表，它的键key是先修课程，它的值value是必须在键对应的课程之后学习的所有课程。
+        //    // 注意课程编号是i。
+        //    Map<Integer, List<Integer>> graph = new HashMap<>();
+        //    for (int i = 0; i < numCourses; i++) {// 注意这里只是建立了哈希表，哈希表的键与空值对应，还没有添加键对应的值
+        //        graph.put(i, new LinkedList<Integer>());
+        //    }
+        //
+        //    // 根据先修顺序构建出有向图graph，graph用一个HashMap表示邻接表，它的键key是先修课程，它的值value是必须在键对应的课程之后学习的所有课程。
+        //    int[] inDegrees = new int[numCourses]; // 将每个节点的入度保存到数组inDegrees中，“inDegrees[i]”表示节点i的入度。
+        //    // 注意原数组的prerequisites的元素的第一个元素是后修课程，第二个元素是先后课程。
+        //    for (int[] prereq : prerequisites) {// 遍历数组，根据先修顺序构建有向图并记录每一个节点的入度。
+        //        // 注意在原参数数组中prerequisites第2个元素才是先修课程，第1个元素是后修课程。
+        //        // graph.get(prereq[1])得到先修课程,.add(prereq[0])将先修课程对应的后修课程加入到对应集合中
+        //        graph.get(prereq[1]).add(prereq[0]);// 将先修课程的后修课程添加到对应的键值对中
+        //        inDegrees[prereq[0]]++;// 后修课程的入度加1
+        //    }
+        //
+        //    // 对有向图进行拓扑排序的算法是每次找出一个入度为0的节点添加到序列中，然后删除该节点及所有以该节点为起点的边。
+        //    // 重复这个过程，直到图为空或图中不存在入度为0的节点。
+        //    Queue<Integer> queue = new LinkedList<>(); // 广度优先搜索算法实现拓扑排序。队列中保存的是入度为0的节点。
+        //    for (int i = 0; i < numCourses; i++) {
+        //        if (inDegrees[i] == 0) {
+        //            queue.add(i);
+        //        }
+        //    }
+        //
+        //    // 每次从队列中取出一个节点，将该节点添加到拓扑排序序列中，然后找到该课程的后修课程并将它们的节点的入度减1，这相当于删除从先修课程到后修课程的边。
+        //    // 如果发现新的入度为0的节点，则将其添加到队列中。重复这个过程直到队列为空，此时要么图中所有节点都已经访问完毕，已经得到了完整的拓扑排序序列；要么剩下的还没有搜索到的节点形成一个环，已经不存在入度为0的节点。
+        //    List<Integer> order = new LinkedList<>();// order表示拓扑排序序列
+        //    while (!queue.isEmpty()) {
+        //        int course = queue.remove();// 每次从队列中取出入度为0的一个节点
+        //        order.add(course);
+        //        // 遍历course的所有后修课程。graph.get(course)表示在course之后要学习的课程
+        //        for (int next : graph.get(course)) {
+        //            inDegrees[next]--;// 找到该课程的后修课程并将它们的节点的入度减1，这相当于删除从先修课程到后修课程的边。
+        //            if (inDegrees[next] == 0) {// 如果发现新的入度为0的节点，则将其添加到队列中
+        //                queue.add(next);
+        //            }
+        //        }
+        //    }
+        //
+        //    //return order.size()==numCourses?order.stream().mapToInt(i->i).toArray():new int[0];
+        //    if (order.size() == numCourses) {// 如果队列的长度等于课程长度，那就表明该有向无环图已经排好序了
+        //        // 将集合转换成数组
+        //        int[] ans = new int[numCourses];
+        //        for (int i = 0; i < numCourses; i++) {
+        //            ans[i] = order.get(i);
+        //        }
+        //        return ans;
+        //
+        //    } else {
+        //        return new int[0];
+        //    }
+        //}
+
+
+
+        public int[] findOrder(int numCourses, int[][] prerequisites) {
+            if(prerequisites==null){
+                return new int[0];
+            }
+            Map<Integer,List<Integer>> graph=new HashMap<>();
+            for (int i = 0; i < numCourses; i++) {
+                graph.put(i,new ArrayList<>());
+            }
+            int[] inDegrees=new int[numCourses];
+
+            for (int i = 0; i < prerequisites.length; i++) {
+                graph.get(prerequisites[i][1]).add(prerequisites[i][0]);
+                inDegrees[prerequisites[i][0]]++;
+            }
+
+            Queue<Integer> queue=new LinkedList<>();
+            for (int i = 0; i < numCourses; i++) {
+                if(inDegrees[i]==0){
+                    queue.add(i);
+                }
+            }
+
+            List<Integer> order=new LinkedList<>();
+            while (queue.size()>0){
+                int course=queue.remove();
+                order.add(course);
+                for(int next:graph.get(course)){
+                    inDegrees[next]--;
+                    if(inDegrees[next]==0){
+                        queue.add(next);
+                    }
+                }
+            }
+
+            if(order.size()==numCourses){
+                int[] ans=new int[numCourses];
+                for (int i = 0; i < numCourses; i++) {
+                    ans[i]=order.get(i);
+                }
+                return ans;
+            }else {
+                return new int[0];
+            }
+        }
+
+
+    }
+
+//runtime:9 ms
+//memory:42.3 MB
